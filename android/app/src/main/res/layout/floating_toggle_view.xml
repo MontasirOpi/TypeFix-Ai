@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/floating_root"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_floating_pill"
+    android:elevation="8dp"
+    android:gravity="center_vertical"
+    android:orientation="horizontal">
+
+    <!-- Collapsed View (Standard Drag / Fix Toggle) -->
+    <LinearLayout
+        android:id="@+id/layout_collapsed"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <ProgressBar
+            android:id="@+id/float_progress"
+            style="?android:attr/progressBarStyleSmall"
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:layout_marginEnd="6dp"
+            android:indeterminate="true"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/tv_float_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-medium"
+            android:text="✨ Fix"
+            android:textColor="#93C5FD"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/btn_float_expand_arrow"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:text="▾"
+            android:textColor="#94A3B8"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+    <!-- Expanded View (Writing Modes & Close) -->
+    <LinearLayout
+        android:id="@+id/layout_expanded"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/btn_float_action_fix"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="6dp"
+            android:background="@drawable/bg_floating_action"
+            android:fontFamily="sans-serif-medium"
+            android:text="✨ Fix"
+            android:textColor="#93C5FD"
+            android:textSize="13sp" />
+
+        <TextView
+            android:id="@+id/btn_float_action_improve"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="6dp"
+            android:background="@drawable/bg_floating_action"
+            android:fontFamily="sans-serif-medium"
+            android:text="Improve"
+            android:textColor="#E0E2E6"
+            android:textSize="13sp" />
+
+        <TextView
+            android:id="@+id/btn_float_action_pro"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="6dp"
+            android:background="@drawable/bg_floating_action"
+            android:fontFamily="sans-serif-medium"
+            android:text="Formal"
+            android:textColor="#E0E2E6"
+            android:textSize="13sp" />
+
+        <TextView
+            android:id="@+id/btn_float_action_friendly"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="6dp"
+            android:background="@drawable/bg_floating_action"
+            android:fontFamily="sans-serif-medium"
+            android:text="Friendly"
+            android:textColor="#E0E2E6"
+            android:textSize="13sp" />
+
+        <TextView
+            android:id="@+id/btn_float_collapse"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp"
+            android:text="✕"
+            android:textColor="#94A3B8"
+            android:textSize="15sp" />
+    </LinearLayout>
+
+</LinearLayout>

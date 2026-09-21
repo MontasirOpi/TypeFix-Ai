@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">TypeFix AI</string>
+    <string name="ime_name">TypeFix AI</string>
+    <string name="subtype_en">English (US)</string>
+    <string name="action_fix">✨ Fix</string>
+    <string name="action_improve">Improve</string>
+    <string name="action_professional">Professional</string>
+    <string name="action_friendly">Friendly</string>
+    <string name="action_shorten">Shorten</string>
+    <string name="action_expand">Expand</string>
+    <string name="action_switch">Switch</string>
+    <string name="status_ready">Type or select text to fix</string>
+    <string name="status_correcting">Fixing...</string>
+    <string name="status_no_text">No text found</string>
+    <string name="status_password_safe">Password field ignored for privacy</string>
+    <string name="floating_service_title">TypeFix Screen Assistant</string>
+    <string name="floating_service_desc">Active in background. Tap floating toggle to fix text.</string>
+    <string name="accessibility_description">Enables TypeFix AI floating button to read and replace text in your active keyboard without sending data online.</string>
+</resources>
