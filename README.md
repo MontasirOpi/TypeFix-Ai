@@ -6,6 +6,25 @@ TypeFix AI is a privacy-first, fully offline AI writing assistant for Android. I
 
 ---
 
+## Voice typing (Android)
+
+Enable TypeFix in Android keyboard settings and select it as your keyboard. Open an
+editable field, tap **🎤 Speak**, grant microphone access, then return and tap Speak
+again. Speak in your device's default language and tap **Finish** (or wait for the
+recognizer to finish). The final transcript is inserted at the cursor or replaces
+the selected text. Tap **Fix** afterward for the existing correction pipeline.
+Long-press Speak/Finish to cancel without inserting anything.
+
+Voice requires **Android 12+**, an on-device recognition provider, and an installed
+language pack. Availability varies by phone and language. Older devices can still
+use the normal keyboard and correction tools. There is no cloud recognition fallback,
+no microphone use before an explicit tap, and TypeFix does not save recordings.
+Closing the keyboard, switching editors, or moving the selection cancels dictation.
+A session times out after 60 seconds. This version supports dictation; spoken
+assistant commands and automatic AI rewriting are not implemented.
+
+See [voice testing](docs/voice-testing.md) for device validation.
+
 ## 🌟 Key Highlights
 
 - **100% Offline by Design**: Powered by on-device deterministic rules and ONNX Runtime Mobile inference. Zero cloud API calls (no OpenAI, Anthropic, Gemini, or Firebase).
