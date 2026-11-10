@@ -144,6 +144,7 @@ class TypeFixInputMethodService : InputMethodService() {
     }
 
     override fun onFinishInputView(finishingInput: Boolean) {
+        editorGeneration++
         editorEdits.clear()
         cancelVoice()
         super.onFinishInputView(finishingInput)
@@ -327,6 +328,7 @@ class TypeFixInputMethodService : InputMethodService() {
     }
 
     override fun onDestroy() {
+        editorEdits.clear()
         cancelVoice()
         serviceScope.cancel()
         onnxEngine.unloadModel()
