@@ -1,7 +1,6 @@
 import 'package:get/get.dart';
 import '../features/onboarding/onboarding_screen.dart';
 import '../features/home/home_screen.dart';
-import '../features/keyboard/keyboard_setup_screen.dart';
 import '../features/models/model_screen.dart';
 import '../features/settings/settings_screen.dart';
 import '../features/privacy/privacy_screen.dart';
@@ -29,7 +28,7 @@ class AppRoutes {
     ),
     GetPage(
       name: keyboardSetup,
-      page: () => const KeyboardSetupScreen(),
+      page: () => const HomeScreen(),
       transition: Transition.rightToLeft,
     ),
     GetPage(

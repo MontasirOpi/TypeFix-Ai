@@ -24,7 +24,7 @@
     <string name="voice_unavailable">Offline voice needs Android 12+ and an installed on-device speech recognizer/language.</string>
     <string name="voice_permission">Microphone access is needed for voice typing. Tap Speak again after granting access.</string>
     <string name="voice_permission_title">Enable voice typing</string>
-    <string name="voice_permission_explanation">TypeFix uses your microphone only after you tap Speak. Recognition stays on your device. No recording is saved by TypeFix. Return to your keyboard and tap Speak after allowing access.</string>
+    <string name="voice_permission_explanation">TypeFix uses your microphone only after you tap Speak. Recognition stays on your device. No recording is saved by TypeFix. Return to your usual keyboard and tap the floating Speak after allowing access.</string>
     <string name="voice_allow">Allow microphone</string>
     <string name="voice_inserted">Voice text inserted. Tap Fix for corrections.</string>
     <string name="voice_error">Could not recognize speech. Check your offline language pack and try again.</string>
@@ -37,4 +37,5 @@
     <string name="edit_undone">Last edit undone.</string>
     <string name="edit_changed">The editor changed. Please try again.</string>
     <string name="edit_unsupported">This editor does not support safe preview insertion.</string>
+    <string name="assistant_access_description">Shows a microphone when a keyboard is visible. Only when you tap Speak, reads the focused non-password field and inserts your transcript there. Does not store field contents or use the clipboard. You can disable access in Android Settings.</string>
 </resources>

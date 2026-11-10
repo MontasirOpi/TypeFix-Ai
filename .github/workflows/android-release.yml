@@ -3,7 +3,7 @@ name: Android release APK
 on:
   workflow_dispatch:
   push:
-    branches: [main, codex/voice-preview-undo]
+    branches: [main, codex/floating-voice-assistant]
   pull_request:
     branches: [main]
 
@@ -40,18 +40,20 @@ jobs:
         run: |
           apkanalyzer="$ANDROID_HOME/cmdline-tools/latest/bin/apkanalyzer"
           "$apkanalyzer" manifest permissions build/app/outputs/flutter-apk/app-release.apk | tee permissions.txt
-          if grep -E 'SYSTEM_ALERT_WINDOW|FOREGROUND_SERVICE|POST_NOTIFICATIONS|BIND_ACCESSIBILITY_SERVICE' permissions.txt; then
-            echo 'Unexpected sensitive permission in keyboard-only APK'
+          if grep -E 'SYSTEM_ALERT_WINDOW|FOREGROUND_SERVICE_SPECIAL_USE|POST_NOTIFICATIONS' permissions.txt; then
+            echo 'Unexpected overlay or foreground permission'
             exit 1
           fi
           "$apkanalyzer" manifest print build/app/outputs/flutter-apk/app-release.apk > manifest.xml
-          if grep -E 'TypeFixAccessibilityService|FloatingAssistantService|android.accessibilityservice' manifest.xml; then
-            echo 'Unexpected service in keyboard-only APK'
+          if grep -E 'TypeFixInputMethodService|FloatingAssistantService' manifest.xml; then
+            echo 'Unexpected keyboard or foreground service'
             exit 1
           fi
+          grep -q 'FloatingVoiceService' manifest.xml
+          grep -q 'android.permission.BIND_ACCESSIBILITY_SERVICE' manifest.xml
       - uses: actions/upload-artifact@v4
         with:
-          name: TypeFix-AI-1.1.0-release-apk
+          name: TypeFix-AI-1.2.0-floating-voice-apk
           path: |
             build/app/outputs/flutter-apk/app-release.apk
             permissions.txt
