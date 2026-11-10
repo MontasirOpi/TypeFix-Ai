@@ -23,6 +23,15 @@ class FlutterBridge(private val context: Context) : MethodChannel.MethodCallHand
 
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
         when (call.method) {
+            "assistantEnabled" -> result.success(com.typefix.ai.assistant.FloatingVoiceService.instance != null)
+            "openAssistantSettings" -> {
+                context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                result.success(true)
+            }
+            "requestMicrophone" -> {
+                context.startActivity(Intent(context, com.typefix.ai.voice.VoicePermissionActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                result.success(true)
+            }
             "isKeyboardEnabled" -> {
                 result.success(isKeyboardEnabled())
             }
