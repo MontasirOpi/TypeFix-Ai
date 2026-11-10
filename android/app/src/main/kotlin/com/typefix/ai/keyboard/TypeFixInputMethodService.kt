@@ -3,6 +3,8 @@ package com.typefix.ai.keyboard
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.widget.TextView
+import android.text.method.ScrollingMovementMethod
 import android.widget.Button
 import android.view.inputmethod.InputConnection
 import com.typefix.ai.voice.OfflineVoiceController
@@ -33,7 +35,13 @@ class TypeFixInputMethodService : InputMethodService() {
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     private val textContextReader = TextContextReader()
-    private val textReplacer = TextReplacer()
+    private val editorEdits = EditorEdits()
+    private var previewPanel: View? = null
+    private var previewText: TextView? = null
+    private var insertButton: Button? = null
+    private var undoButton: Button? = null
+    private var pendingTranscript: String? = null
+    private var voiceSnapshot: EditSnapshot? = null
     private val onnxEngine = OnnxModelEngine()
     private lateinit var correctionEngine: CorrectionEngine
     private lateinit var modelManager: ModelManager
@@ -48,28 +56,67 @@ class TypeFixInputMethodService : InputMethodService() {
     private var voiceEditorGeneration = 0
     private val voice by lazy {
         OfflineVoiceController(this,
-            onStatus = { suggestionController?.setStatus(getString(it)) },
+            onStatus = {
+                suggestionController?.setStatus(getString(it))
+                if (pendingTranscript == null) previewText?.setText(it)
+            },
             onActive = { active ->
                 voiceButton?.setText(if (active) R.string.voice_stop else R.string.voice_start)
                 suggestionController?.setLoading(active)
+                if (active) {
+                    previewPanel?.visibility = View.VISIBLE
+                    previewText?.setText(R.string.voice_listening)
+                    insertButton?.isEnabled = false
+                } else if (pendingTranscript == null) {
+                    previewPanel?.visibility = View.GONE
+                }
+                updateUndo()
             },
             onTranscript = { transcript ->
                 if (voiceConnection != null && voiceEditorGeneration == editorGeneration &&
                     isInputViewShown && !textContextReader.isSecureField(currentInputEditorInfo)) {
-                    val inserted = voiceConnection?.commitText(transcript, 1) == true
-                    suggestionController?.setStatus(getString(if (inserted) R.string.voice_inserted else R.string.voice_error))
+                    pendingTranscript = transcript
+                    previewPanel?.visibility = View.VISIBLE
+                    previewText?.text = transcript
+                    insertButton?.isEnabled = true
+                    voiceButton?.isEnabled = false
+                    suggestionController?.setLoading(true, getString(R.string.voice_review))
+                    suggestionController?.setStatus(getString(R.string.voice_review))
                 }
-                voiceConnection = null
             })
     }
 
     private fun cancelVoice() {
         voice.cancel()
         voiceConnection = null
+        voiceSnapshot = null
+        pendingTranscript = null
+        previewPanel?.visibility = View.GONE
+        voiceButton?.isEnabled = !correctionInProgress && !textContextReader.isSecureField(currentInputEditorInfo)
+        updateUndo()
+    }
+
+    private fun updateUndo() {
+        undoButton?.isEnabled = editorEdits.canUndo && !voice.active && pendingTranscript == null && !correctionInProgress
+    }
+
+    private fun insertTranscript() {
+        val text = pendingTranscript ?: return
+        val ic = voiceConnection ?: return
+        val snapshot = voiceSnapshot ?: return
+        if (voiceEditorGeneration != editorGeneration || textContextReader.isSecureField(currentInputEditorInfo)) {
+            cancelVoice()
+            return
+        }
+        val success = editorEdits.replace(ic, snapshot, minOf(snapshot.start, snapshot.end),
+            maxOf(snapshot.start, snapshot.end), text)
+        cancelVoice()
+        suggestionController?.setStatus(getString(if (success) R.string.voice_inserted else R.string.edit_changed))
+        updateUndo()
     }
 
     private fun toggleVoice() {
-        if (correctionInProgress) return
+        if (correctionInProgress || pendingTranscript != null) return
         if (textContextReader.isSecureField(currentInputEditorInfo)) return
         if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
             suggestionController?.setStatus(getString(R.string.voice_permission))
@@ -78,6 +125,12 @@ class TypeFixInputMethodService : InputMethodService() {
         }
         if (!voice.active) {
             voiceConnection = currentInputConnection ?: return
+            voiceSnapshot = editorEdits.snapshot(voiceConnection)
+            if (voiceSnapshot == null) {
+                suggestionController?.setStatus(getString(R.string.edit_unsupported))
+                voiceConnection = null
+                return
+            }
             voiceEditorGeneration = editorGeneration
         }
         voice.toggle()
@@ -86,16 +139,20 @@ class TypeFixInputMethodService : InputMethodService() {
     override fun onStartInput(attribute: EditorInfo?, restarting: Boolean) {
         super.onStartInput(attribute, restarting)
         editorGeneration++
+        editorEdits.clear()
         cancelVoice()
     }
 
     override fun onFinishInputView(finishingInput: Boolean) {
+        editorGeneration++
+        editorEdits.clear()
         cancelVoice()
         super.onFinishInputView(finishingInput)
     }
 
     override fun onFinishInput() {
         editorGeneration++
+        editorEdits.clear()
         cancelVoice()
         super.onFinishInput()
     }
@@ -103,7 +160,8 @@ class TypeFixInputMethodService : InputMethodService() {
     override fun onUpdateSelection(oldSelStart: Int, oldSelEnd: Int, newSelStart: Int,
         newSelEnd: Int, candidatesStart: Int, candidatesEnd: Int) {
         super.onUpdateSelection(oldSelStart, oldSelEnd, newSelStart, newSelEnd, candidatesStart, candidatesEnd)
-        if (voice.active && (oldSelStart != newSelStart || oldSelEnd != newSelEnd)) {
+        if ((voice.active || pendingTranscript != null) &&
+            (oldSelStart != newSelStart || oldSelEnd != newSelEnd)) {
             cancelVoice()
             suggestionController?.setStatus(getString(R.string.voice_cancelled))
         }
@@ -141,6 +199,28 @@ class TypeFixInputMethodService : InputMethodService() {
         )
         keyboardController?.setupKeyboard()
 
+        previewPanel = view.findViewById(R.id.voice_panel)
+        previewText = view.findViewById<TextView>(R.id.voice_preview).apply {
+            movementMethod = ScrollingMovementMethod()
+            isFocusable = false
+            isFocusableInTouchMode = false
+        }
+        insertButton = view.findViewById<Button>(R.id.btn_voice_insert).apply {
+            setOnClickListener { insertTranscript() }
+        }
+        view.findViewById<Button>(R.id.btn_voice_cancel).setOnClickListener {
+            cancelVoice()
+            suggestionController?.setStatus(getString(R.string.voice_discarded))
+        }
+        undoButton = view.findViewById<Button>(R.id.btn_undo).apply {
+            setOnClickListener {
+                val ic = currentInputConnection
+                val success = ic != null && !textContextReader.isSecureField(currentInputEditorInfo) && editorEdits.undo(ic)
+                updateUndo()
+                suggestionController?.setStatus(getString(if (success) R.string.edit_undone else R.string.edit_changed))
+            }
+        }
+        updateUndo()
         voiceButton = view.findViewById<Button>(R.id.btn_voice).apply {
             setOnClickListener { toggleVoice() }
             setOnLongClickListener {
@@ -181,10 +261,22 @@ class TypeFixInputMethodService : InputMethodService() {
             return
         }
 
+        val original = editorEdits.snapshot(ic)
+        if (ic == null || original == null) {
+            suggestionController?.setStatus(getString(R.string.edit_unsupported))
+            return
+        }
+        val from = if (context.isSelected) minOf(original.start, original.end) else original.start - context.prefixCharsToDelete
+        val to = if (context.isSelected) maxOf(original.start, original.end) else original.end + context.suffixCharsToDelete
+        if (from !in 0..original.text.length || to !in from..original.text.length || original.text.substring(from, to) != context.text) {
+            suggestionController?.setStatus(getString(R.string.edit_changed))
+            return
+        }
         suggestionController?.setLoading(true, "Processing...")
 
         val correctionEditorGeneration = editorGeneration
         correctionInProgress = true
+        updateUndo()
         voiceButton?.isEnabled = false
         serviceScope.launch {
             try {
@@ -206,11 +298,8 @@ class TypeFixInputMethodService : InputMethodService() {
                 }
 
                 // Atomically replace text in active editor
-                val replaced = textReplacer.replaceText(
-                    inputConnection = ic,
-                    context = context,
-                    newText = result.correctedText
-                )
+                val replaced = editorEdits.replace(ic, original, from, to, result.correctedText)
+                updateUndo()
 
                 if (replaced) {
                     val actionName = when (action) {
@@ -227,6 +316,7 @@ class TypeFixInputMethodService : InputMethodService() {
                 }
             } finally {
                 correctionInProgress = false
+                updateUndo()
                 voiceButton?.isEnabled = !textContextReader.isSecureField(currentInputEditorInfo)
             }
         }
@@ -238,6 +328,7 @@ class TypeFixInputMethodService : InputMethodService() {
     }
 
     override fun onDestroy() {
+        editorEdits.clear()
         cancelVoice()
         serviceScope.cancel()
         onnxEngine.unloadModel()

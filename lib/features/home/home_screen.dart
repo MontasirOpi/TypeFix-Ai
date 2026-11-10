@@ -46,8 +46,8 @@ class HomeScreen extends StatelessWidget {
 
                   const SizedBox(height: 12),
 
-                  // 2. Floating Screen Assistant Card (For Gboard and all keyboards)
-                  _buildFloatingAssistantCard(controller),
+                  // Voice typing instructions
+                  _buildVoiceTypingCard(),
 
                   const SizedBox(height: 12),
 
@@ -156,88 +156,26 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildFloatingAssistantCard(HomeController controller) {
-    final bool isRunning = controller.isFloatingAssistantRunning;
-    final bool hasOverlay = controller.canDrawOverlays;
-    final bool hasAccessibility = controller.isAccessibilityEnabled;
-
-    return Card(
+  Widget _buildVoiceTypingCard() {
+    return const Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Icon(
-                  isRunning ? Icons.bubble_chart : Icons.bubble_chart_outlined,
-                  color: isRunning ? AppTheme.primaryBlueLight : AppTheme.textSecondary,
-                  size: 22,
-                ),
-                const SizedBox(width: 8),
-                const Text(
-                  'Floating Screen Assistant',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.textPrimary,
-                  ),
-                ),
-                const Spacer(),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: isRunning
-                        ? AppTheme.successGreen.withAlpha(30)
-                        : AppTheme.darkBorder,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    isRunning ? 'ACTIVE' : 'INACTIVE',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: isRunning ? AppTheme.successGreen : AppTheme.textSecondary,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            const Text(
-              'Keep your favorite keyboard (Gboard, etc.). A draggable ✨ Fix button stays visible on screen while typing to fix text with 1 tap.',
-              style: TextStyle(fontSize: 13, color: AppTheme.textSecondary),
-            ),
-            const SizedBox(height: 14),
-            Row(
-              children: [
-                if (!hasOverlay)
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () => controller.requestOverlayPermission(),
-                      child: const Text('Grant Overlay Permission'),
-                    ),
-                  )
-                else ...[
-                  Expanded(
-                    child: isRunning
-                        ? OutlinedButton(
-                            onPressed: () => controller.toggleFloatingAssistant(false),
-                            child: const Text('Hide Floating Button'),
-                          )
-                        : ElevatedButton(
-                            onPressed: () => controller.toggleFloatingAssistant(true),
-                            child: const Text('Show Floating Button'),
-                          ),
-                  ),
-                  const SizedBox(width: 8),
-                  OutlinedButton(
-                    onPressed: () => controller.openAccessibilitySettings(),
-                    child: Text(hasAccessibility ? '✓ 1-Tap Active' : 'Enable 1-Tap'),
-                  ),
-                ],
-              ],
-            ),
+            Text('Speak, review, insert',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600,
+                    color: AppTheme.textPrimary)),
+            SizedBox(height: 8),
+            Text('Select the TypeFix keyboard, tap Speak, then Finish. Review the '
+                'transcript and choose Insert text or Cancel. Tap Undo to reverse '
+                'your last insertion or correction before editing further.',
+                style: TextStyle(color: AppTheme.textSecondary)),
+            SizedBox(height: 8),
+            Text('Offline voice requires Android 12+ and a supported language pack. '
+                'Microphone permission is requested only when you tap Speak. '
+                'No accessibility or floating-window access is needed.',
+                style: TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
           ],
         ),
       ),

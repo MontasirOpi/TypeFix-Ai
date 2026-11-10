@@ -10,9 +10,6 @@ class HomeController extends GetxController {
 
   bool isKeyboardEnabled = false;
   bool isKeyboardSelected = false;
-  bool canDrawOverlays = false;
-  bool isAccessibilityEnabled = false;
-  bool isFloatingAssistantRunning = false;
   bool isCheckingStatus = false;
   List<ModelInfo> models = [];
   Map<String, dynamic> privacyStatus = {};
@@ -39,40 +36,11 @@ class HomeController extends GetxController {
 
     isKeyboardEnabled = await keyboardService.isEnabled();
     isKeyboardSelected = await keyboardService.isSelected();
-    canDrawOverlays = await NativeBridge.canDrawOverlays();
-    isAccessibilityEnabled = await NativeBridge.isAccessibilityEnabled();
-    isFloatingAssistantRunning = await NativeBridge.isFloatingAssistantRunning();
     models = await modelService.getModels();
     privacyStatus = await NativeBridge.getPrivacyStatus();
 
     isCheckingStatus = false;
     update();
-  }
-
-  Future<void> toggleFloatingAssistant(bool enable) async {
-    if (enable) {
-      if (!canDrawOverlays) {
-        await NativeBridge.requestOverlayPermission();
-        return;
-      }
-      await NativeBridge.startFloatingAssistant();
-    } else {
-      await NativeBridge.stopFloatingAssistant();
-    }
-    await Future.delayed(const Duration(milliseconds: 500));
-    await refreshAll();
-  }
-
-  Future<void> requestOverlayPermission() async {
-    await NativeBridge.requestOverlayPermission();
-    await Future.delayed(const Duration(seconds: 1));
-    await refreshAll();
-  }
-
-  Future<void> openAccessibilitySettings() async {
-    await NativeBridge.openAccessibilitySettings();
-    await Future.delayed(const Duration(seconds: 1));
-    await refreshAll();
   }
 
   Future<void> openKeyboardSettings() async {

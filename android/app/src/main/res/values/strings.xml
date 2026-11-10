@@ -30,4 +30,11 @@
     <string name="voice_error">Could not recognize speech. Check your offline language pack and try again.</string>
     <string name="voice_timeout">No speech detected. Tap Speak to try again.</string>
     <string name="voice_cancelled">Voice typing cancelled because the editor changed.</string>
+    <string name="voice_insert">Insert text</string>
+    <string name="voice_review">Review your transcript, then tap Insert text or Cancel.</string>
+    <string name="voice_discarded">Transcript discarded.</string>
+    <string name="action_undo">Undo</string>
+    <string name="edit_undone">Last edit undone.</string>
+    <string name="edit_changed">The editor changed. Please try again.</string>
+    <string name="edit_unsupported">This editor does not support safe preview insertion.</string>
 </resources>

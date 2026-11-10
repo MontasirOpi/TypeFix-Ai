@@ -11,19 +11,40 @@ TypeFix AI is a privacy-first, fully offline AI writing assistant for Android. I
 Enable TypeFix in Android keyboard settings and select it as your keyboard. Open an
 editable field, tap **🎤 Speak**, grant microphone access, then return and tap Speak
 again. Speak in your device's default language and tap **Finish** (or wait for the
-recognizer to finish). The final transcript is inserted at the cursor or replaces
-the selected text. Tap **Fix** afterward for the existing correction pipeline.
-Long-press Speak/Finish to cancel without inserting anything.
+recognizer to finish). The transcript appears in a scrollable preview. Tap **Insert text** to insert it
+at the cursor or replace the selection, or **Cancel** to discard it. Tap **Fix**
+afterward for corrections. **Undo** restores the last insertion or correction
+while the field contents and cursor still match that edit.
+Cancel is available during listening, processing, and preview. Long-press
+Speak/Finish also cancels without inserting anything.
 
 Voice requires **Android 12+**, an on-device recognition provider, and an installed
 language pack. Availability varies by phone and language. Older devices can still
 use the normal keyboard and correction tools. There is no cloud recognition fallback,
 no microphone use before an explicit tap, and TypeFix does not save recordings.
-Closing the keyboard, switching editors, or moving the selection cancels dictation.
+Closing the keyboard, switching editors, or moving the selection cancels dictation
+and discards any preview. Undo history stays only in memory and is cleared when
+the keyboard closes or the editor changes. Editors that cannot provide a reliable
+text snapshot (up to 20,000 characters) cannot use safe insertion/correction.
 A session times out after 60 seconds. This version supports dictation; spoken
 assistant commands and automatic AI rewriting are not implemented.
 
 See [voice testing](docs/voice-testing.md) for device validation.
+
+## Permissions and installation
+
+This keyboard-only version requests microphone access for explicitly started voice
+typing. Accessibility, floating overlays, background foreground services, and their
+notification permission have been removed, including the related setup controls.
+The optional Android text-selection action remains available.
+
+Removing unused sensitive capabilities reduces access, but does not guarantee a
+Play Protect verdict. Do not disable Play Protect. If Google still blocks a build,
+the developer should use Google's official app-verification/appeal process.
+For distribution, configure a stable developer signing key and prefer Play testing.
+The current release build still uses the project's debug signing configuration;
+GitHub-hosted runs may use different debug keys, so updates may fail signature checks.
+Do not uninstall an existing app without considering local settings/models/history.
 
 ## 🌟 Key Highlights
 
