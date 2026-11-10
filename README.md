@@ -1,7 +1,7 @@
 # TypeFix AI — floating voice assistant
 
 Keep Gboard, Samsung Keyboard, or your preferred keyboard. TypeFix is an app with
-a floating microphone, not a replacement keyboard. Version 1.2.0+3.
+a floating microphone, not a replacement keyboard. Version 1.2.1+4.
 
 ## Use
 
@@ -50,3 +50,10 @@ unit tests cover text replacement/Undo. Flutter tests check that setup retains t
 existing keyboard and requires consent before opening accessibility settings.
 
 Physical-device validation is still required. See [device checks](docs/floating-voice-testing.md).
+
+## Permission setup update
+
+Setup shows microphone, accessibility, and optional recording notification status.
+Use **Open app permissions** after a repeated denial. Notification access is optional
+and requested separately on Android 13+. See [permission audit](docs/permission-audit.md).
+This update does not establish or guarantee Play Protect approval.

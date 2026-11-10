@@ -23,6 +23,21 @@ class FlutterBridge(private val context: Context) : MethodChannel.MethodCallHand
 
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
         when (call.method) {
+            "permissionStatus" -> result.success(mapOf(
+                "microphone" to com.typefix.ai.voice.PermissionStatus.microphone(context),
+                "notifications" to com.typefix.ai.voice.PermissionStatus.notifications(context),
+                "accessibility" to (com.typefix.ai.assistant.FloatingVoiceService.instance != null)
+            ))
+            "requestNotifications" -> {
+                context.startActivity(Intent(context, com.typefix.ai.voice.VoicePermissionActivity::class.java)
+                    .putExtra("notifications", true).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                result.success(true)
+            }
+            "openAppSettings" -> {
+                context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                    android.net.Uri.parse("package:${context.packageName}")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                result.success(true)
+            }
             "assistantEnabled" -> result.success(com.typefix.ai.assistant.FloatingVoiceService.instance != null)
             "openAssistantSettings" -> {
                 context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))

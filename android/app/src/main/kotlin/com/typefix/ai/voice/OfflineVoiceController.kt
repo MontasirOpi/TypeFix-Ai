@@ -61,7 +61,8 @@ class OfflineVoiceController(
                 override fun onError(error: Int) {
                     if (token != generation) return
                     cancel()
-                    onStatus(if (error == SpeechRecognizer.ERROR_NO_MATCH ||
+                    onStatus(if (error == SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS) R.string.voice_permission
+                        else if (error == SpeechRecognizer.ERROR_NO_MATCH ||
                         error == SpeechRecognizer.ERROR_SPEECH_TIMEOUT) R.string.voice_timeout else R.string.voice_error)
                 }
                 override fun onResults(results: Bundle?) {
@@ -86,6 +87,9 @@ class OfflineVoiceController(
                 putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, false)
                 putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
             })
+        } catch (_: SecurityException) {
+            cancel()
+            onStatus(R.string.voice_start_blocked)
         } catch (_: RuntimeException) {
             cancel()
             onStatus(R.string.voice_error)
