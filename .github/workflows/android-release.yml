@@ -7,6 +7,10 @@ on:
   pull_request:
     branches: [main]
 
+concurrency:
+  group: android-release-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
@@ -30,7 +34,7 @@ jobs:
       - run: flutter build apk --release
       - name: Native unit tests
         working-directory: android
-        run: ./gradlew :app:testReleaseUnitTest
+        run: ./gradlew :app:testDebugUnitTest
       - name: Check packaged permissions
         shell: bash
         run: |
