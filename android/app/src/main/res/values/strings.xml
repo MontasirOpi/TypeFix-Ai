@@ -17,4 +17,17 @@
     <string name="floating_service_title">TypeFix Screen Assistant</string>
     <string name="floating_service_desc">Active in background. Tap floating toggle to fix text.</string>
     <string name="accessibility_description">Enables TypeFix AI floating button to read and replace text in your active keyboard without sending data online.</string>
+    <string name="voice_start">🎤 Speak</string>
+    <string name="voice_stop">■ Finish</string>
+    <string name="voice_listening">Listening offline… Tap Finish when done</string>
+    <string name="voice_processing">Transcribing offline…</string>
+    <string name="voice_unavailable">Offline voice needs Android 12+ and an installed on-device speech recognizer/language.</string>
+    <string name="voice_permission">Microphone access is needed for voice typing. Tap Speak again after granting access.</string>
+    <string name="voice_permission_title">Enable voice typing</string>
+    <string name="voice_permission_explanation">TypeFix uses your microphone only after you tap Speak. Recognition stays on your device. No recording is saved by TypeFix. Return to your keyboard and tap Speak after allowing access.</string>
+    <string name="voice_allow">Allow microphone</string>
+    <string name="voice_inserted">Voice text inserted. Tap Fix for corrections.</string>
+    <string name="voice_error">Could not recognize speech. Check your offline language pack and try again.</string>
+    <string name="voice_timeout">No speech detected. Tap Speak to try again.</string>
+    <string name="voice_cancelled">Voice typing cancelled because the editor changed.</string>
 </resources>

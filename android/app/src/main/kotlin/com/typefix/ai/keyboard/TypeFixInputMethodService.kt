@@ -1,5 +1,12 @@
 package com.typefix.ai.keyboard
 
+import android.Manifest
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.widget.Button
+import android.view.inputmethod.InputConnection
+import com.typefix.ai.voice.OfflineVoiceController
+import com.typefix.ai.voice.VoicePermissionActivity
 import android.content.Context
 import android.inputmethodservice.InputMethodService
 import android.view.View
@@ -34,6 +41,74 @@ class TypeFixInputMethodService : InputMethodService() {
     private var suggestionController: SuggestionController? = null
     private var keyboardController: KeyboardController? = null
 
+    private var voiceButton: Button? = null
+    private var voiceConnection: InputConnection? = null
+    private var correctionInProgress = false
+    private var editorGeneration = 0
+    private var voiceEditorGeneration = 0
+    private val voice by lazy {
+        OfflineVoiceController(this,
+            onStatus = { suggestionController?.setStatus(getString(it)) },
+            onActive = { active ->
+                voiceButton?.setText(if (active) R.string.voice_stop else R.string.voice_start)
+                suggestionController?.setLoading(active)
+            },
+            onTranscript = { transcript ->
+                if (voiceConnection != null && voiceEditorGeneration == editorGeneration &&
+                    isInputViewShown && !textContextReader.isSecureField(currentInputEditorInfo)) {
+                    val inserted = voiceConnection?.commitText(transcript, 1) == true
+                    suggestionController?.setStatus(getString(if (inserted) R.string.voice_inserted else R.string.voice_error))
+                }
+                voiceConnection = null
+            })
+    }
+
+    private fun cancelVoice() {
+        voice.cancel()
+        voiceConnection = null
+    }
+
+    private fun toggleVoice() {
+        if (correctionInProgress) return
+        if (textContextReader.isSecureField(currentInputEditorInfo)) return
+        if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            suggestionController?.setStatus(getString(R.string.voice_permission))
+            startActivity(Intent(this, VoicePermissionActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            return
+        }
+        if (!voice.active) {
+            voiceConnection = currentInputConnection ?: return
+            voiceEditorGeneration = editorGeneration
+        }
+        voice.toggle()
+    }
+
+    override fun onStartInput(attribute: EditorInfo?, restarting: Boolean) {
+        super.onStartInput(attribute, restarting)
+        editorGeneration++
+        cancelVoice()
+    }
+
+    override fun onFinishInputView(finishingInput: Boolean) {
+        cancelVoice()
+        super.onFinishInputView(finishingInput)
+    }
+
+    override fun onFinishInput() {
+        editorGeneration++
+        cancelVoice()
+        super.onFinishInput()
+    }
+
+    override fun onUpdateSelection(oldSelStart: Int, oldSelEnd: Int, newSelStart: Int,
+        newSelEnd: Int, candidatesStart: Int, candidatesEnd: Int) {
+        super.onUpdateSelection(oldSelStart, oldSelEnd, newSelStart, newSelEnd, candidatesStart, candidatesEnd)
+        if (voice.active && (oldSelStart != newSelStart || oldSelEnd != newSelEnd)) {
+            cancelVoice()
+            suggestionController?.setStatus(getString(R.string.voice_cancelled))
+        }
+    }
+
     override fun onCreate() {
         super.onCreate()
         modelManager = ModelManager(applicationContext)
@@ -49,6 +124,7 @@ class TypeFixInputMethodService : InputMethodService() {
     }
 
     override fun onCreateInputView(): View {
+        cancelVoice()
         val view = layoutInflater.inflate(R.layout.keyboard_view, null)
 
         suggestionController = SuggestionController(
@@ -65,12 +141,21 @@ class TypeFixInputMethodService : InputMethodService() {
         )
         keyboardController?.setupKeyboard()
 
+        voiceButton = view.findViewById<Button>(R.id.btn_voice).apply {
+            setOnClickListener { toggleVoice() }
+            setOnLongClickListener {
+                cancelVoice()
+                suggestionController?.setStatus(getString(R.string.status_ready))
+                true
+            }
+        }
         return view
     }
 
     override fun onStartInputView(info: EditorInfo?, restarting: Boolean) {
         super.onStartInputView(info, restarting)
 
+        voiceButton?.isEnabled = !textContextReader.isSecureField(info)
         if (textContextReader.isSecureField(info)) {
             suggestionController?.setLoading(false)
             suggestionController?.setStatus(getString(R.string.status_password_safe))
@@ -81,6 +166,7 @@ class TypeFixInputMethodService : InputMethodService() {
     }
 
     private fun handleCorrectionAction(action: CorrectionAction) {
+        cancelVoice()
         val ic = currentInputConnection
         val info = currentInputEditorInfo
 
@@ -97,42 +183,51 @@ class TypeFixInputMethodService : InputMethodService() {
 
         suggestionController?.setLoading(true, "Processing...")
 
+        val correctionEditorGeneration = editorGeneration
+        correctionInProgress = true
+        voiceButton?.isEnabled = false
         serviceScope.launch {
-            val result = withContext(Dispatchers.Default) {
-                correctionEngine.process(context.text, action)
-            }
-
-            suggestionController?.setLoading(false)
-
-            if (!result.isSuccess) {
-                suggestionController?.setStatus(result.message ?: "Cannot safely fix text")
-                return@launch
-            }
-
-            if (result.diff.isIdentical) {
-                suggestionController?.setStatus("Text already looks great!")
-                return@launch
-            }
-
-            // Atomically replace text in active editor
-            val replaced = textReplacer.replaceText(
-                inputConnection = currentInputConnection,
-                context = context,
-                newText = result.correctedText
-            )
-
-            if (replaced) {
-                val actionName = when (action) {
-                    CorrectionAction.FIX -> "✨ Fixed"
-                    CorrectionAction.IMPROVE -> "Improved"
-                    CorrectionAction.PROFESSIONAL -> "Rewritten (Formal)"
-                    CorrectionAction.FRIENDLY -> "Rewritten (Friendly)"
-                    CorrectionAction.SHORTEN -> "Shortened"
-                    CorrectionAction.EXPAND -> "Expanded"
+            try {
+                val result = withContext(Dispatchers.Default) {
+                    correctionEngine.process(context.text, action)
                 }
-                suggestionController?.setStatus("$actionName text safely")
-            } else {
-                suggestionController?.setStatus("Failed to update editor")
+
+                if (correctionEditorGeneration != editorGeneration) return@launch
+                suggestionController?.setLoading(false)
+
+                if (!result.isSuccess) {
+                    suggestionController?.setStatus(result.message ?: "Cannot safely fix text")
+                    return@launch
+                }
+
+                if (result.diff.isIdentical) {
+                    suggestionController?.setStatus("Text already looks great!")
+                    return@launch
+                }
+
+                // Atomically replace text in active editor
+                val replaced = textReplacer.replaceText(
+                    inputConnection = ic,
+                    context = context,
+                    newText = result.correctedText
+                )
+
+                if (replaced) {
+                    val actionName = when (action) {
+                        CorrectionAction.FIX -> "✨ Fixed"
+                        CorrectionAction.IMPROVE -> "Improved"
+                        CorrectionAction.PROFESSIONAL -> "Rewritten (Formal)"
+                        CorrectionAction.FRIENDLY -> "Rewritten (Friendly)"
+                        CorrectionAction.SHORTEN -> "Shortened"
+                        CorrectionAction.EXPAND -> "Expanded"
+                    }
+                    suggestionController?.setStatus("$actionName text safely")
+                } else {
+                    suggestionController?.setStatus("Failed to update editor")
+                }
+            } finally {
+                correctionInProgress = false
+                voiceButton?.isEnabled = !textContextReader.isSecureField(currentInputEditorInfo)
             }
         }
     }
@@ -143,6 +238,7 @@ class TypeFixInputMethodService : InputMethodService() {
     }
 
     override fun onDestroy() {
+        cancelVoice()
         serviceScope.cancel()
         onnxEngine.unloadModel()
         super.onDestroy()
