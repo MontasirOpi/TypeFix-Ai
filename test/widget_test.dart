@@ -15,7 +15,7 @@ void main() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
       const MethodChannel('com.typefix.ai/bridge'), (call) async {
         calls.add(call.method);
-        if (call.method == 'assistantEnabled') return false;
+        if (call.method == 'permissionStatus') return {'accessibility': false, 'microphone': false, 'notifications': false};
         return true;
       });
   });
@@ -23,7 +23,9 @@ void main() {
     await tester.pumpWidget(const TypeFixApp());
     await tester.pumpAndSettle();
     expect(find.text('Keep your keyboard'), findsOneWidget);
+    expect(find.text('Microphone: Not granted'), findsOneWidget);
     expect(find.text('Enable Keyboard'), findsNothing);
+    await tester.ensureVisible(find.text('Set up floating voice'));
     await tester.tap(find.text('Set up floating voice'));
     await tester.pumpAndSettle();
     expect(find.text('Allow focused-field access?'), findsOneWidget);
@@ -31,6 +33,7 @@ void main() {
     await tester.tap(find.text('Cancel'));
     await tester.pumpAndSettle();
     expect(calls, isNot(contains('openAssistantSettings')));
+    await tester.ensureVisible(find.text('Set up floating voice'));
     await tester.tap(find.text('Set up floating voice'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Agree and open Settings'));

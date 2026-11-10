@@ -11,6 +11,8 @@ class AssistantScreen extends StatefulWidget {
 class _AssistantScreenState extends State<AssistantScreen> with WidgetsBindingObserver {
   static const bridge = MethodChannel('com.typefix.ai/bridge');
   bool enabled = false;
+  bool microphone = false;
+  bool notifications = false;
   String? error;
   @override
   void initState() {
@@ -29,8 +31,13 @@ class _AssistantScreenState extends State<AssistantScreen> with WidgetsBindingOb
   }
   Future<void> refresh() async {
     try {
-      final value = await bridge.invokeMethod<bool>('assistantEnabled') ?? false;
-      if (mounted) setState(() => enabled = value);
+      final value = await bridge.invokeMapMethod<String, dynamic>('permissionStatus') ?? {};
+      if (mounted) setState(() {
+        enabled = value['accessibility'] == true;
+        microphone = value['microphone'] == true;
+        notifications = value['notifications'] == true;
+        error = null;
+      });
     } catch (_) {
       if (mounted) setState(() => error = 'Android assistant service is unavailable.');
     }
@@ -83,7 +90,12 @@ class _AssistantScreenState extends State<AssistantScreen> with WidgetsBindingOb
           FilledButton(onPressed: settings,
               child: Text(enabled ? 'Manage or disable access' : 'Set up floating voice')),
           const SizedBox(height: 8),
+          Text('Microphone: ${microphone ? 'Granted' : 'Not granted'}'),
           OutlinedButton(onPressed: () => invoke('requestMicrophone'), child: const Text('Allow microphone')),
+          const SizedBox(height: 8),
+          Text('Recording notifications: ${notifications ? 'Enabled' : 'Disabled (optional)'}'),
+          OutlinedButton(onPressed: () => invoke('requestNotifications'), child: const Text('Allow recording notifications')),
+          TextButton(onPressed: () => invoke('openAppSettings'), child: const Text('Open app permissions')),
         ],
       ))),
       const SizedBox(height: 24),

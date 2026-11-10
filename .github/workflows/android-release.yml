@@ -3,7 +3,7 @@ name: Android release APK
 on:
   workflow_dispatch:
   push:
-    branches: [main, codex/floating-voice-assistant]
+    branches: [main, codex/permission-setup-fix]
   pull_request:
     branches: [main]
 
@@ -40,7 +40,7 @@ jobs:
         run: |
           apkanalyzer="$ANDROID_HOME/cmdline-tools/latest/bin/apkanalyzer"
           "$apkanalyzer" manifest permissions build/app/outputs/flutter-apk/app-release.apk | tee permissions.txt
-          if grep -E 'SYSTEM_ALERT_WINDOW|FOREGROUND_SERVICE_SPECIAL_USE|POST_NOTIFICATIONS' permissions.txt; then
+          if grep -E 'SYSTEM_ALERT_WINDOW|FOREGROUND_SERVICE_SPECIAL_USE' permissions.txt; then
             echo 'Unexpected overlay or foreground permission'
             exit 1
           fi
@@ -49,11 +49,15 @@ jobs:
             echo 'Unexpected keyboard or foreground service'
             exit 1
           fi
+          for permission in RECORD_AUDIO FOREGROUND_SERVICE FOREGROUND_SERVICE_MICROPHONE POST_NOTIFICATIONS; do
+            grep -Fxq "android.permission.$permission" permissions.txt
+          done
+          grep -Eq 'foregroundServiceType="(microphone|0[xX]0*80|128)"' manifest.xml
           grep -q 'FloatingVoiceService' manifest.xml
           grep -q 'android.permission.BIND_ACCESSIBILITY_SERVICE' manifest.xml
       - uses: actions/upload-artifact@v4
         with:
-          name: TypeFix-AI-1.2.0-floating-voice-apk
+          name: TypeFix-AI-1.2.1-permission-fix-apk
           path: |
             build/app/outputs/flutter-apk/app-release.apk
             permissions.txt
