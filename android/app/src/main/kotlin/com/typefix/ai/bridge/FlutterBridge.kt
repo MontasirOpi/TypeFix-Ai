@@ -2,14 +2,9 @@ package com.typefix.ai.bridge
 
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
-import android.os.Build
 import android.provider.Settings
 import android.view.inputmethod.InputMethodManager
-import androidx.core.content.ContextCompat
 import com.typefix.ai.ai.ModelManager
-import com.typefix.ai.overlay.FloatingAssistantService
-import com.typefix.ai.overlay.TypeFixAccessibilityService
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 
@@ -54,63 +49,6 @@ class FlutterBridge(private val context: Context) : MethodChannel.MethodCallHand
                     result.error("PICKER_ERROR", e.message, null)
                 }
             }
-            // Floating Screen Assistant Methods
-            "canDrawOverlays" -> {
-                result.success(Settings.canDrawOverlays(context))
-            }
-            "requestOverlayPermission" -> {
-                try {
-                    val intent = Intent(
-                        Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                        Uri.parse("package:${context.packageName}")
-                    ).apply {
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    }
-                    context.startActivity(intent)
-                    result.success(true)
-                } catch (e: Exception) {
-                    result.error("OVERLAY_INTENT_ERROR", e.message, null)
-                }
-            }
-            "isAccessibilityEnabled" -> {
-                result.success(TypeFixAccessibilityService.isRunning())
-            }
-            "openAccessibilitySettings" -> {
-                try {
-                    val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).apply {
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    }
-                    context.startActivity(intent)
-                    result.success(true)
-                } catch (e: Exception) {
-                    result.error("ACCESSIBILITY_INTENT_ERROR", e.message, null)
-                }
-            }
-            "isFloatingAssistantRunning" -> {
-                result.success(FloatingAssistantService.isRunning)
-            }
-            "startFloatingAssistant" -> {
-                try {
-                    if (Settings.canDrawOverlays(context)) {
-                        val intent = Intent(context, FloatingAssistantService::class.java)
-                        ContextCompat.startForegroundService(context, intent)
-                        result.success(true)
-                    } else {
-                        result.success(false)
-                    }
-                } catch (e: Exception) {
-                    result.error("START_SERVICE_ERROR", e.message, null)
-                }
-            }
-            "stopFloatingAssistant" -> {
-                try {
-                    val intent = Intent(context, FloatingAssistantService::class.java)
-                    context.stopService(intent)
-                    result.success(true)
-                } catch (e: Exception) {
-                    result.error("STOP_SERVICE_ERROR", e.message, null)
-                }
-            }
             "getInstalledModels" -> {
                 val models = modelManager.getModels().map {
                     mapOf(
@@ -148,8 +86,7 @@ class FlutterBridge(private val context: Context) : MethodChannel.MethodCallHand
                         "ruleEngineEnabled" to prefs.getBoolean("rule_engine_enabled", true),
                         "localAiEnabled" to prefs.getBoolean("local_ai_enabled", true),
                         "activeLanguage" to (prefs.getString("active_language", "en") ?: "en"),
-                        "defaultAction" to (prefs.getString("default_action", "FIX") ?: "FIX"),
-                        "floatingAssistantEnabled" to prefs.getBoolean("floating_assistant_enabled", false)
+                        "defaultAction" to (prefs.getString("default_action", "FIX") ?: "FIX")
                     )
                 )
             }

@@ -1,0 +1,55 @@
+name: Android release APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, codex/voice-preview-undo]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter --version
+      - run: flutter pub get
+      - run: flutter test
+      - run: flutter build apk --release
+      - name: Native unit tests
+        working-directory: android
+        run: ./gradlew :app:testReleaseUnitTest
+      - name: Check packaged permissions
+        shell: bash
+        run: |
+          apkanalyzer="$ANDROID_HOME/cmdline-tools/latest/bin/apkanalyzer"
+          "$apkanalyzer" manifest permissions build/app/outputs/flutter-apk/app-release.apk | tee permissions.txt
+          if grep -E 'SYSTEM_ALERT_WINDOW|FOREGROUND_SERVICE|POST_NOTIFICATIONS|BIND_ACCESSIBILITY_SERVICE' permissions.txt; then
+            echo 'Unexpected sensitive permission in keyboard-only APK'
+            exit 1
+          fi
+          "$apkanalyzer" manifest print build/app/outputs/flutter-apk/app-release.apk > manifest.xml
+          if grep -E 'TypeFixAccessibilityService|FloatingAssistantService|android.accessibilityservice' manifest.xml; then
+            echo 'Unexpected service in keyboard-only APK'
+            exit 1
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TypeFix-AI-1.1.0-release-apk
+          path: |
+            build/app/outputs/flutter-apk/app-release.apk
+            permissions.txt
+          if-no-files-found: error
+          retention-days: 14
